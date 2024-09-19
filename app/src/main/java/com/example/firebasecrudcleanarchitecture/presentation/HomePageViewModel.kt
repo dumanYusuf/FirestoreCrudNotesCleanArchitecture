@@ -7,6 +7,7 @@ import com.example.firebasecrudcleanarchitecture.domain.model.Notes
 import com.example.firebasecrudcleanarchitecture.domain.use_case.add_notes_use_case.AddNote
 import com.example.firebasecrudcleanarchitecture.domain.use_case.delete_notes_use_Case.DeleteNotes
 import com.example.firebasecrudcleanarchitecture.domain.use_case.get_notes_use_case.GetNotes
+import com.example.firebasecrudcleanarchitecture.domain.use_case.search_note_use_case.SearchNotes
 import com.example.firebasecrudcleanarchitecture.domain.use_case.update_notes_use_case.UpdateNotes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +22,11 @@ class HomePageViewModel @Inject constructor(
     private val getNotesusecase:GetNotes,
     private val addNotesUseCase:AddNote,
     private val deleteNotesUseCase: DeleteNotes,
-    private val updateNotesUsecase:UpdateNotes
+    private val updateNotesUsecase:UpdateNotes,
+    private val searchNotesUseCase: SearchNotes
 ) :ViewModel(){
 
-    private val _notes = MutableStateFlow<List<Notes>>(emptyList())
+ private val _notes = MutableStateFlow<List<Notes>>(emptyList())
     val stateNotes: StateFlow<List<Notes>> = _notes.asStateFlow()
 
 
@@ -52,6 +54,16 @@ class HomePageViewModel @Inject constructor(
     fun updateNotes(notes: Notes){
         viewModelScope.launch {
             updateNotesUsecase.invoke(notes)
+        }
+    }
+
+    fun searchNotes(search:String){
+        viewModelScope.launch {
+            searchNotesUseCase.invoke(search).collect{searchNotes->
+                _notes.value=searchNotes
+                Log.e("searchNotes","succsess searchNotes")
+                println("${_notes.value}")
+            }
         }
     }
 

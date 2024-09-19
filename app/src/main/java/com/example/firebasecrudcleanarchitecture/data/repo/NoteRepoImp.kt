@@ -16,11 +16,8 @@ class NoteRepoImp @Inject constructor(private val firestore:FirebaseFirestore) :
 
     override suspend fun addNote(note: Notes) {
      //  notesCollection.document(note.id).set(note).await()
-        // Firestore otomatik olarak bir belge ID'si oluşturur
         val newNoteRef = notesCollection.add(note).await()
-        // ID'yi not ile güncelle
         val noteWithId = note.copy(id = newNoteRef.id)
-        // Güncellenmiş notu Firestore'a kaydet
         notesCollection.document(noteWithId.id).set(noteWithId).await()
     }
 
@@ -37,6 +34,17 @@ class NoteRepoImp @Inject constructor(private val firestore:FirebaseFirestore) :
         val notes=snapshot.documents.mapNotNull { it.toObject(Notes::class.java) }
         emit(notes)
     }
+
+    override fun searchNote(search:String): Flow<List<Notes>> = flow {
+        val snapshot=notesCollection.get().await()// burda tüm verileri alıyoruz
+        val searchList=snapshot.documents.mapNotNull { it.toObject(Notes::class.java) }// burda da aldığımız belgeleri Notes nesnesine şeviriyoruz null verileer hariç
+        val filterNote=searchList.filter {note->
+            note.title.contains(search, ignoreCase = true)
+        }
+        emit(filterNote)
+    }
+
+
 
     /*
     // addSnapshotListener anlok olarak verileri dinler

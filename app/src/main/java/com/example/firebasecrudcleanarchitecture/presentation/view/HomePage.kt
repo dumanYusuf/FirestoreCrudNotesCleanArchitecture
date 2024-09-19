@@ -1,6 +1,7 @@
 package com.example.firebasecrudcleanarchitecture.presentation.view
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,16 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.collectAsState
@@ -51,6 +55,8 @@ fun HomePage(
     val notesList by viewModel.stateNotes.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
     val noteToEdit = remember { mutableStateOf<Notes?>(null) }
+    var searchTextField by remember { mutableStateOf("") }
+    var isSearcing by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = true) {
         viewModel.getNotes()
@@ -58,7 +64,48 @@ fun HomePage(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(text = "NoteApp") })
+            TopAppBar(title = {
+                if (isSearcing){
+                    TextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp)),
+                        placeholder = { Text(text = "Search notes...") },
+                        singleLine = true,
+                        value = searchTextField,
+                        onValueChange = {
+                            searchTextField=it
+                            viewModel.searchNotes(searchTextField)
+                            // viewModel.getNotes()
+                        },
+                        label = { Text(text = "Searching")}
+
+                    )
+                }
+                else{
+                    Text(text = "NoteApp")
+                }
+            },
+                actions = {
+                    if (isSearcing){
+                        IconButton(onClick = {
+                            isSearcing=false
+                            searchTextField=""
+                        }) {
+                            Icon(painter = painterResource(id = R.drawable.close), contentDescription = "")
+                        }
+                    }
+                    else{
+                        IconButton(onClick = {
+                            isSearcing=true
+                            searchTextField=""
+                        }) {
+                            Icon(painter = painterResource(id = R.drawable.search), contentDescription = "")
+                        }
+                    }
+                }
+            )
         },
         content = { innerPadding ->
             LazyColumn(
@@ -79,7 +126,7 @@ fun HomePage(
                                 Icon(
                                     modifier = Modifier.clickable {
                                         viewModel.deleteNotes(note)
-                                        viewModel.getNotes() // Refresh notes after deletion
+                                        viewModel.getNotes()
                                     },
                                     painter = painterResource(id = R.drawable.delete), contentDescription = ""
                                 )
@@ -92,7 +139,6 @@ fun HomePage(
                                 Text(text = note.content)
                                 Icon(
                                     modifier = Modifier.clickable {
-                                        // Set the note to edit and show dialog
                                         noteToEdit.value = note
                                         showDialog.value = true
                                     },
@@ -107,7 +153,6 @@ fun HomePage(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    // Show dialog for adding a new note
                     noteToEdit.value = null
                     showDialog.value = true
                 }
@@ -123,16 +168,14 @@ fun HomePage(
             onDismiss = { showDialog.value = false },
             onSave = { title, description ->
                 if (noteToEdit.value != null) {
-                    // Update existing note
                     val updatedNote = noteToEdit.value!!.copy(title = title, content = description)
                     viewModel.updateNotes(updatedNote)
                 } else {
-                    // Add new note
                     val newNote = Notes(title = title, content = description)
                     viewModel.addNote(newNote)
                 }
                 showDialog.value = false
-                viewModel.getNotes() // Refresh notes list
+                viewModel.getNotes()
             }
         )
     }
@@ -148,7 +191,7 @@ fun AddNoteDialog(
     val description = remember { mutableStateOf(note?.content ?: "") }
 
     AlertDialog(
-        onDismissRequest = { onDismiss() },
+        onDismissRequest = {  },
         title = { Text(text = if (note == null) "Add a Note" else "Edit Note") },
         text = {
             Column {
