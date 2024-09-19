@@ -23,4 +23,5 @@ Bu yapı, kodun okunabilirliğini, bakımını ve test edilebilirliğini artır�
 ![image alt](https://github.com/dumanYusuf/FirestoreCrudNotesCleanArchitecture/blob/master/cleanFirestore2.png?raw=true)
 ![image alt](https://github.com/dumanYusuf/FirestoreCrudNotesCleanArchitecture/blob/master/cleanFirestore3.png?raw=true)
 ![image alt](https://github.com/dumanYusuf/FirestoreCrudNotesCleanArchitecture/blob/master/cleanFirestore4.png?raw=true)
+![image alt](https://github.com/dumanYusuf/FirestoreCrudNotesCleanArchitecture/blob/master/cleanFirestore5.png?raw=true)
 
