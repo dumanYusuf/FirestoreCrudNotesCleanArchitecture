@@ -1,8 +1,10 @@
 package com.example.firebasecrudcleanarchitecture.presentation.view
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,6 +50,7 @@ fun HomePage(
 ) {
     val notesList by viewModel.stateNotes.collectAsState()
     val showDialog = remember { mutableStateOf(false) }
+    val noteToEdit = remember { mutableStateOf<Notes?>(null) }
 
     LaunchedEffect(key1 = true) {
         viewModel.getNotes()
@@ -68,9 +71,34 @@ fun HomePage(
                         .fillMaxWidth()
                         .padding(8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = note.title, style = MaterialTheme.typography.bodyLarge)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = note.title, style = MaterialTheme.typography.bodyLarge)
+                                Icon(
+                                    modifier = Modifier.clickable {
+                                        viewModel.deleteNotes(note)
+                                        viewModel.getNotes() // Refresh notes after deletion
+                                    },
+                                    painter = painterResource(id = R.drawable.delete), contentDescription = ""
+                                )
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = note.content)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = note.content)
+                                Icon(
+                                    modifier = Modifier.clickable {
+                                        // Set the note to edit and show dialog
+                                        noteToEdit.value = note
+                                        showDialog.value = true
+                                    },
+                                    painter = painterResource(id = R.drawable.edit), contentDescription = ""
+                                )
+                            }
                         }
                     }
                 }
@@ -79,6 +107,8 @@ fun HomePage(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
+                    // Show dialog for adding a new note
+                    noteToEdit.value = null
                     showDialog.value = true
                 }
             ) {
@@ -89,33 +119,37 @@ fun HomePage(
 
     if (showDialog.value) {
         AddNoteDialog(
+            note = noteToEdit.value,
             onDismiss = { showDialog.value = false },
             onSave = { title, description ->
-                val newNote = Notes(
-                    title = title,
-                    content = description
-                )
-                viewModel.addNote(newNote)
+                if (noteToEdit.value != null) {
+                    // Update existing note
+                    val updatedNote = noteToEdit.value!!.copy(title = title, content = description)
+                    viewModel.updateNotes(updatedNote)
+                } else {
+                    // Add new note
+                    val newNote = Notes(title = title, content = description)
+                    viewModel.addNote(newNote)
+                }
                 showDialog.value = false
-                viewModel.getNotes()// verileri get ile getirdiğim için ekranana değişiklikler hemen yansımıyor o yüzden tekrar getNotesı çagırdım.
+                viewModel.getNotes() // Refresh notes list
             }
         )
     }
 }
 
-
-
 @Composable
 fun AddNoteDialog(
+    note: Notes?,
     onDismiss: () -> Unit,
     onSave: (String, String) -> Unit
 ) {
-    val title = remember { mutableStateOf("") }
-    val description = remember { mutableStateOf("") }
+    val title = remember { mutableStateOf(note?.title ?: "") }
+    val description = remember { mutableStateOf(note?.content ?: "") }
 
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text(text = "Add a Note") },
+        title = { Text(text = if (note == null) "Add a Note" else "Edit Note") },
         text = {
             Column {
                 // Title TextField
